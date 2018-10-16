@@ -15,7 +15,6 @@ func GetServer() *negroni.Negroni {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/tty", controller.WebSocketTermHandler)
-	r.HandleFunc("/debug", controller.DebugHandler)
 
 	// Use classic server and return it
 	handler := cors.Default().Handler(r)

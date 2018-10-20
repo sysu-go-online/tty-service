@@ -44,7 +44,7 @@ func WebSocketTermHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// Handle messages from the channel
-	isFirst := true
+	// request for create container
 	var sConn *websocket.Conn
 	for msg := range clientMsg {
 		conn := handlerClientTTYMsg(&isFirst, ws, sConn, msgType, &msg)

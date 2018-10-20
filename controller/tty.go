@@ -1,10 +1,11 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
+	"path/filepath"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -44,7 +45,7 @@ func WebSocketTermHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// Handle messages from the channel
-	// request for create container
+	isFirst := true
 	var sConn *websocket.Conn
 	for msg := range clientMsg {
 		conn := handlerClientTTYMsg(&isFirst, ws, sConn, msgType, &msg)
@@ -58,15 +59,14 @@ func WebSocketTermHandler(w http.ResponseWriter, r *http.Request) {
 // HandlerClientMsg handle message from client and send it to docker service
 func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Conn, msgType int, connectContext *RequestCommand) (conn *websocket.Conn) {
 	r := &TTYResponse{}
-	var mapping *types.PortMapping
-	mapping = nil
+	var id string
 	if *isFirst {
 		// check token
 		ok, username := tools.GetUserNameFromToken(connectContext.JWT, AuthRedisClient)
 		connectContext.username = username
 		if !ok {
 			fmt.Fprintln(os.Stderr, "Can not get user token information")
-			r.Type = "error"
+			r.OK = false
 			r.Msg = "Invalid token"
 			ws.WriteJSON(r)
 			ws.Close()
@@ -80,7 +80,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		ok, err := u.GetWithUsername(session)
 		if !ok {
 			fmt.Fprintln(os.Stderr, "Can not get user information")
-			r.Type = "error"
+			r.OK = false
 			r.Msg = "Invalid user information"
 			ws.WriteJSON(r)
 			ws.Close()
@@ -89,7 +89,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		}
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			r.Type = "error"
+			r.OK = false
 			r.Msg = err.Error()
 			ws.WriteJSON(r)
 			ws.Close()
@@ -100,7 +100,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		has, err := p.GetWithUserIDAndName(session)
 		if !has {
 			fmt.Fprintln(os.Stderr, "Can not get project information")
-			r.Type = "error"
+			r.OK = false
 			r.Msg = "Can not get project information"
 			ws.WriteJSON(r)
 			ws.Close()
@@ -109,53 +109,60 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		}
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			r.Type = "error"
+			r.OK = false
 			r.Msg = err.Error()
 			ws.WriteJSON(r)
 			ws.Close()
 			conn = nil
 			return
 		}
-		connectContext.projectType = p.Language
 
-		// Check if the command is system command
-		command := strings.Split(connectContext.Command, " ")
-		if len(command) <= 0 {
-			fmt.Fprintln(os.Stderr, "Can not parse command")
-			r.Type = "error"
-			r.Msg = "invalid command"
+		// send request for start a container
+		userHome := filepath.Join("/home", username)
+		body := NewContainer{
+			Image:     "go-online-golang_image",
+			Command:   "bash",
+			PWD:       "/root/",
+			ENV:       []string{},
+			Mnt:       []string{userHome},
+			TargetDir: []string{"/root"},
+			Network:   []string{},
+		}
+		b, err := json.Marshal(body)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			r.OK = false
+			r.Msg = err.Error()
 			ws.WriteJSON(r)
 			ws.Close()
 			conn = nil
 			return
 		}
-		if command[0] == "go-online" {
-			mapping = &types.PortMapping{}
-			// parse command
-			mapping, err = tools.ParseSystemCommand(command, DomainNameRedisClient)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				r.Type = "error"
-				r.Msg = err.Error()
-				ws.WriteJSON(r)
-				ws.Close()
-				conn = nil
-				return
-			}
-			connectContext.Command = mapping.Command
+		id, err = startContainer(b)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			r.OK = false
+			r.Msg = err.Error()
+			ws.WriteJSON(r)
+			ws.Close()
+			conn = nil
+			return
 		}
 
-		tmp, err := initDockerConnection("tty")
+		// TODO: write container information to the redis
+		// connect to the container
+		tmp, err := initDockerConnection("tty", id)
 		sConn = tmp
 		if err != nil {
 			fmt.Println("Can not connect to the docker service")
-			r.Type = "error"
+			r.OK = false
 			r.Msg = "Server error"
 			ws.WriteJSON(r)
 			ws.Close()
+			return
 		}
 		// Listen message from docker service and send to client connection
-		go sendTTYMsgToClient(ws, sConn, mapping)
+		go sendTTYMsgToClient(ws, sConn)
 	}
 
 	if sConn == nil {
@@ -167,88 +174,35 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 	}
 
 	// Send message to docker service
-	handleTTYMessage(msgType, sConn, *isFirst, connectContext, mapping)
+	handleTTYMessage(msgType, sConn, id, connectContext.Message)
 	*isFirst = false
 	conn = sConn
 	return
 }
 
 // SendMsgToClient send message to client
-func sendTTYMsgToClient(cConn *websocket.Conn, sConn *websocket.Conn, mapping *types.PortMapping) {
-	type dockerMsg struct {
-		Msg  string `json:"msg"`
-		ID   string `json:"id"`
-		Type string `json:"type"`
-	}
+func sendTTYMsgToClient(cConn *websocket.Conn, sConn *websocket.Conn) {
 	for {
-		msg := &dockerMsg{}
-		err := sConn.ReadJSON(msg)
 		r := &TTYResponse{}
+		err := sConn.ReadJSON(r)
 		if err != nil {
 			fmt.Println(err)
 			// Server closed connection
 			cConn.Close()
 			return
 		}
-		// register for the first time
-		if mapping != nil {
-			err := RegisterPortAndDomainInfo(mapping, msg.ID)
-			if err != nil {
-				fmt.Println(err)
-				r.Type = "error"
-				r.Msg = err.Error()
-				cConn.WriteJSON(r)
-			}
-			DOMAINNAME := os.Getenv("DOMAIN_NAME")
-			if len(DOMAINNAME) != 0 {
-				DOMAINNAME = "." + DOMAINNAME
-			} else {
-				DOMAINNAME = ".localhost"
-			}
-			r.Type = "dname"
-			r.Msg = mapping.DomainName + DOMAINNAME
-			cConn.WriteJSON(r)
-			mapping = nil
-		}
-		r.Type = "tty"
-		r.Msg = msg.Msg
 		cConn.WriteJSON(r)
 	}
 }
 
 // HandleMessage decide different operation according to the given json message
-func handleTTYMessage(mType int, conn *websocket.Conn, isFirst bool, connectContext *RequestCommand, mapping *types.PortMapping) error {
-	var workSpace *Command
-	var err error
-	if isFirst {
-		projectName := connectContext.Project
-		username := connectContext.username
-		pwd := getPwd(projectName, username, connectContext.projectType)
-		env := getEnv(projectName, username, connectContext.projectType)
-		workSpace = &Command{
-			Command:     connectContext.Command,
-			PWD:         pwd,
-			ENV:         env,
-			UserName:    username,
-			ProjectName: projectName,
-			Type:        "tty",
-		}
-		if mapping != nil {
-			workSpace.Ports = []int{mapping.Port}
-		}
-		fmt.Println(workSpace.ENV)
+func handleTTYMessage(mType int, conn *websocket.Conn, id string, msg string) error {
+	Msg := ByteStreamToDocker{
+		ID:  id,
+		Msg: msg,
 	}
 
-	// Send message
-	if isFirst {
-		err = conn.WriteJSON(*workSpace)
-	} else {
-		err = conn.WriteJSON(connectContext)
-	}
-	if err != nil {
-		return err
-	}
-	return nil
+	return conn.WriteJSON(Msg)
 }
 
 // RegisterPortAndDomainInfo register port

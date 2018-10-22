@@ -21,9 +21,9 @@ script:
 # Compile code
   - CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 # Build image locally
-  - docker build -t txzdream/go-online-tty_service:dev .
+  - docker build -t txzdream/go-online-ws_service:dev .
 
 after_success:
 # Push to docker registry
   - echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin
-  - docker push txzdream/go-online-tty_service:dev
+  - docker push txzdream/go-online-ws_service:dev

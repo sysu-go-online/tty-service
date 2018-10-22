@@ -12,8 +12,8 @@ import (
 	projectModel "github.com/sysu-go-online/project-service/model"
 	"github.com/sysu-go-online/public-service/tools"
 	"github.com/sysu-go-online/public-service/types"
-	"github.com/sysu-go-online/tty-service/model"
 	userModel "github.com/sysu-go-online/user-service/model"
+	"github.com/sysu-go-online/ws-service/model"
 )
 
 // WebSocketTermHandler is a middle way handler to connect web app with docker service
@@ -174,7 +174,21 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 	}
 
 	// Send message to docker service
-	handleTTYMessage(msgType, sConn, id, connectContext.Message)
+	switch connectContext.Type {
+	case 0:
+		// user input stream
+		handleTTYMessage(msgType, sConn, id, connectContext.Message)
+	case 1:
+		// menu
+		// TODO: get language
+		c, err := tools.GenerateCommandFromMenu(0, connectContext.Message)
+		if err != nil {
+			r.OK = false
+			r.Msg = err.Error()
+			break
+		}
+		handleTTYMessage(msgType, sConn, id, c)
+	}
 	*isFirst = false
 	conn = sConn
 	return

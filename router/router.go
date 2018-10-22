@@ -4,7 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
-	"github.com/sysu-go-online/tty-service/controller"
+	"github.com/sysu-go-online/ws-service/controller"
 	"github.com/urfave/negroni"
 )
 
@@ -15,6 +15,7 @@ func GetServer() *negroni.Negroni {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/tty", controller.WebSocketTermHandler)
+	r.HandleFunc("/dir", controller.MonitorDirHandler)
 
 	// Use classic server and return it
 	handler := cors.Default().Handler(r)

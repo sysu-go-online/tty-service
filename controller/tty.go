@@ -28,6 +28,14 @@ func WebSocketTermHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer ws.Close()
 
+	// wait for the first message
+	m := RequestCommand{}
+	if err = ws.ReadJSON(&m); err != nil {
+		fmt.Println(err)
+		clientMsg <- m
+		return
+	}
+
 	// Open a goroutine to receive message from client connection
 	go readFromClient(clientMsg, ws)
 
@@ -121,7 +129,11 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		userHome := filepath.Join("/home", username)
 		// get image name from language
 		var image string
-		switch u.Language {
+		userLanguage := connectContext.Language
+		if userLanguage != -2 {
+			userLanguage = u.Language
+		}
+		switch userLanguage {
 		case 0:
 			image = "txzdream/go-online-golang_image"
 		case 1:
@@ -131,10 +143,12 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		default:
 			image = "ubuntu"
 		}
+		// get project root dir
+		pwd := filepath.Join("/root", p.Path, p.Name)
 		body := NewContainer{
 			Image:     image,
 			Command:   "bash",
-			PWD:       "/root/",
+			PWD:       pwd,
 			ENV:       []string{},
 			Mnt:       []string{userHome},
 			TargetDir: []string{"/root"},

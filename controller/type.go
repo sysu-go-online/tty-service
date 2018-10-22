@@ -8,6 +8,7 @@ type RequestCommand struct {
 	JWT      string `json:"jwt"`
 	Project  string `json:"project"`
 	Type     int    `json:"type"`
+	Language int    `json:"language"`
 	username string
 }
 

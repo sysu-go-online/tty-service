@@ -119,8 +119,20 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 
 		// send request for start a container
 		userHome := filepath.Join("/home", username)
+		// get image name from language
+		var image string
+		switch u.Language {
+		case 0:
+			image = "txzdream/go-online-golang_image"
+		case 1:
+			image = "txzdream/go-online-cpp_image"
+		case 2:
+			image = "txzdream/go-online-python_image"
+		default:
+			image = "ubuntu"
+		}
 		body := NewContainer{
-			Image:     "go-online-golang_image",
+			Image:     image,
 			Command:   "bash",
 			PWD:       "/root/",
 			ENV:       []string{},

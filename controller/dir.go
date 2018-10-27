@@ -92,7 +92,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// listen to dir events
-	path := filepath.Join("/home", username, p.Path, p.Name)
+	path := filepath.Join("/home", username, "projects", p.Path, p.Name)
 	c := make(chan notify.EventInfo, 1)
 	if err := notify.Watch(path, c, notify.All); err != nil {
 		log.Fatal(err)

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/websocket"
 	"github.com/rjeczalik/notify"
@@ -94,7 +95,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 	// listen to dir events
 	path := filepath.Join("/home", username, "projects", p.Path, p.Name)
 	c := make(chan notify.EventInfo, 1)
-	if err := notify.Watch(path, c, notify.All); err != nil {
+	if err := notify.Watch(path + "/...", c, notify.All); err != nil {
 		log.Fatal(err)
 	}
 	defer notify.Stop(c)
@@ -109,7 +110,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Block until an event is received.
 	for n := range c {
-		res.Path = n.Path()
+		res.Path = strings.Split(n.Path(), filepath.Join("/home", username, "projects/", p.Path, p.Name))[1][1:]
 		res.OK = true
 		switch n.Event() {
 		case notify.Create:

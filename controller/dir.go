@@ -99,21 +99,36 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer notify.Stop(c)
 
+	res.OK = true
+	res.Type = -1
+	err = ws.WriteJSON(res)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	// Block until an event is received.
 	for n := range c {
 		res.Path = n.Path()
 		res.OK = true
-		switch n.Event().String() {
-		case "IN_CREATE":
+		switch n.Event() {
+		case notify.Create:
 			res.Type = 0
-		case "IN_DELETE":
+		case notify.Remove:
 			res.Type = 1
-		case "IN_MODIFY":
+		case notify.Write:
 			res.Type = 2
-		case "IN_MOVED_FROM":
+		case notify.InMovedFrom:
 			res.Type = 3
-		case "IN_MOVED_TO":
+		case notify.InMovedTo:
 			res.Type = 4
+		default:
+			res.Type = 5
+		}
+		err = ws.WriteJSON(res)
+		if err != nil {
+			log.Println(err)
+			return
 		}
 	}
 }

@@ -130,9 +130,6 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		// get image name from language
 		var image string
 		userLanguage := connectContext.Language
-		if userLanguage != -2 {
-			userLanguage = u.Language
-		}
 		switch userLanguage {
 		case 0:
 			image = "txzdream/go-online-golang_image"

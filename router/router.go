@@ -14,8 +14,8 @@ var upgrader = websocket.Upgrader{}
 func GetServer() *negroni.Negroni {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/tty", controller.WebSocketTermHandler)
-	r.HandleFunc("/dir", controller.MonitorDirHandler)
+	r.HandleFunc("/ws/tty", controller.WebSocketTermHandler)
+	r.HandleFunc("/ws/dir", controller.MonitorDirHandler)
 
 	// Use classic server and return it
 	handler := cors.Default().Handler(r)

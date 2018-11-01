@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -37,7 +38,7 @@ func dialDockerService(service string, id string) (*websocket.Conn, error) {
 	}
 	dockerPort = ":" + dockerPort
 	dockerAddr = dockerAddr + dockerPort
-	url := url.URL{Scheme: "ws", Host: dockerAddr, Path: "/"}
+	url := url.URL{Scheme: "ws", Host: dockerAddr, Path: "/tty"}
 	conn, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
 	if err != nil {
 		return nil, err
@@ -82,13 +83,13 @@ func readFromClient(clientChan chan<- RequestCommand, ws *websocket.Conn) {
 		_, b, err := ws.ReadMessage()
 		if err != nil {
 			if websocket.IsCloseError(err, websocket.CloseGoingAway) {
-				fmt.Fprintln(os.Stderr, "Remote user closed the connection")
+				log.Println("Remote user closed the connection")
 				ws.Close()
 				close(clientChan)
 				break
 			}
 			close(clientChan)
-			fmt.Fprintln(os.Stderr, "Can not read message.")
+			log.Println(err)
 			return
 		}
 		// read json message from rws

@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -54,10 +55,9 @@ func WebSocketTermHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Handle messages from the channel
 	isFirst := true
-	var sConn *websocket.Conn
+	sConn := handlerClientTTYMsg(&isFirst, ws, nil, msgType, &m)
 	for msg := range clientMsg {
-		conn := handlerClientTTYMsg(&isFirst, ws, sConn, msgType, &msg)
-		sConn = conn
+		handlerClientTTYMsg(&isFirst, ws, sConn, msgType, &msg)
 	}
 	if sConn != nil {
 		sConn.Close()
@@ -151,6 +151,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 			TargetDir: []string{"/root"},
 			Network:   []string{},
 		}
+
 		b, err := json.Marshal(body)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -223,7 +224,7 @@ func sendTTYMsgToClient(cConn *websocket.Conn, sConn *websocket.Conn) {
 		r := &TTYResponse{}
 		err := sConn.ReadJSON(r)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			// Server closed connection
 			cConn.Close()
 			return

@@ -126,7 +126,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		}
 
 		// send request for start a container
-		userHome := filepath.Join("/home", username)
+		userHome := filepath.Join("/home", username, "projects")
 		// get image name from language
 		var image string
 		userLanguage := connectContext.Language

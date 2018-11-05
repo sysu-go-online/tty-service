@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/rjeczalik/notify"
@@ -44,6 +45,19 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 		ws.Close()
 		return
 	}
+
+	// keep connection
+	go func() {
+		for {
+			timer := time.NewTimer(time.Second * 2)
+			<-timer.C
+			err := ws.WriteControl(websocket.PingMessage, []byte("ping"), time.Time{})
+			if err != nil {
+				timer.Stop()
+				return
+			}
+		}
+	}()
 
 	// parse jwt for auth and get relevant message
 	// check token
@@ -95,7 +109,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 	// listen to dir events
 	path := filepath.Join("/home", username, "projects", p.Path, p.Name)
 	c := make(chan notify.EventInfo, 1)
-	if err := notify.Watch(path + "/...", c, notify.All); err != nil {
+	if err := notify.Watch(path+"/...", c, notify.All); err != nil {
 		log.Fatal(err)
 	}
 	defer notify.Stop(c)

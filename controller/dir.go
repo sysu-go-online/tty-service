@@ -114,6 +114,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 	c := make(chan notify.EventInfo, 1)
 	if err := notify.Watch(path+"/...", c, notify.All); err != nil {
 		log.Fatal(err)
+		return
 	}
 	defer notify.Stop(c)
 

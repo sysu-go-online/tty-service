@@ -46,6 +46,8 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// listening for close event
+	stop := make(chan bool, 0)
 	// keep connection
 	go func() {
 		for {
@@ -53,6 +55,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 			<-timer.C
 			err := ws.WriteControl(websocket.PingMessage, []byte("ping"), time.Time{})
 			if err != nil {
+				stop <- true
 				timer.Stop()
 				return
 			}
@@ -123,27 +126,31 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Block until an event is received.
-	for n := range c {
-		res.Path = strings.Split(n.Path(), filepath.Join("/home", username, "projects/", p.Path, p.Name))[1][1:]
-		res.OK = true
-		switch n.Event() {
-		case notify.Create:
-			res.Type = 0
-		case notify.Remove:
-			res.Type = 1
-		case notify.Write:
-			res.Type = 2
-		case notify.InMovedFrom:
-			res.Type = 3
-		case notify.InMovedTo:
-			res.Type = 4
-		default:
-			res.Type = 5
+	go func() {
+		for n := range c {
+			res.Path = strings.Split(n.Path(), filepath.Join("/home", username, "projects/", p.Path, p.Name))[1][1:]
+			res.OK = true
+			switch n.Event() {
+			case notify.Create:
+				res.Type = 0
+			case notify.Remove:
+				res.Type = 1
+			case notify.Write:
+				res.Type = 2
+			case notify.InMovedFrom:
+				res.Type = 3
+			case notify.InMovedTo:
+				res.Type = 4
+			default:
+				res.Type = 5
+			}
+			err = ws.WriteJSON(res)
+			if err != nil {
+				stop <- true
+				log.Println(err)
+				return
+			}
 		}
-		err = ws.WriteJSON(res)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-	}
+	}()
+	<-stop
 }

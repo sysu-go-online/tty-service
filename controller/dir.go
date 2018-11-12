@@ -138,7 +138,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 			} else {
 			    if fileInfo.IsDir() {
-			        if err = notify.Watch(n.Path()+"/...", c, notify.All); err != nil {
+			        if err = notify.Watch(n.Path(), c, notify.All); err != nil {
 			            log.Println(err)
 			        } 
 				res.Type = "dir"

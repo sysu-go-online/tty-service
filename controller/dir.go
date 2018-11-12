@@ -144,6 +144,10 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 			    }
 			}
 			
+			if err = notify.Watch(n.Path(), c, notify.All); err != nil {
+			    log.Fatal(err)
+			} 
+			
 			switch n.Event() {
 			case notify.Create:
 				res.State = 0

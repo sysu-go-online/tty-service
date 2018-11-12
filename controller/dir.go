@@ -114,7 +114,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 	path := filepath.Join("/home", username, "projects", p.Path, p.Name)
 	c := make(chan notify.EventInfo, 1)
 	if err := notify.Watch(path+"/...", c, notify.All); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 	defer notify.Stop(c)
@@ -145,7 +145,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			
 			if err = notify.Watch(n.Path(), c, notify.All); err != nil {
-			    log.Fatal(err)
+			    log.Println(err)
 			} 
 			
 			switch n.Event() {

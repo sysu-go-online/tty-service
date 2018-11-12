@@ -132,18 +132,21 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 		for n := range c {
 			res.Path = strings.Split(n.Path(), filepath.Join("/home", username, "projects/", p.Path, p.Name))[1][1:]
 			res.OK = true
+			
+			fileInfo,err := os.Stat(n.Path());
+			if err != nil {
+				log.Println(err)
+			} else {
+			    if fileInfo.IsDir() {
+				res.Type = "dir"
+			    } else {
+				res.Type = "file"
+			    }
+			}
+			
 			switch n.Event() {
 			case notify.Create:
 				res.State = 0
-				fileInfo,err := os.Stat(n.Path());
-				if err != nil {
-					log.Println(err)
-				}
-				if fileInfo.IsDir() {
-					res.Type = "dir"
-				} else {
-					res.Type = "file"
-				}
 			case notify.Remove:
 				res.State = 1
 			case notify.Write:
@@ -152,15 +155,6 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 				res.State = 3
 			case notify.InMovedTo:
 				res.State = 4
-				fileInfo,err := os.Stat(n.Path());
-				if err != nil {
-					log.Println(err)
-				}
-				if fileInfo.IsDir() {
-					res.Type = "dir"
-				}else {
-					res.Type = "file"
-				}
 			default:
 				res.State = 5
 			}

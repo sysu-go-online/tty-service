@@ -26,7 +26,8 @@ type DirRequest struct {
 type DirResponse struct {
 	OK   bool   `json:"ok"`
 	Path string `json:"path"`
-	Type int    `json:"type"`
+	State int    `json:"state"`
+	Type string `json:"type"`
 }
 
 // MonitorDirHandler monitor user dir status
@@ -119,7 +120,7 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 	defer notify.Stop(c)
 
 	res.OK = true
-	res.Type = -1
+	res.State = -1
 	err = ws.WriteJSON(res)
 	if err != nil {
 		log.Println(err)
@@ -130,20 +131,30 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		for n := range c {
 			res.Path = strings.Split(n.Path(), filepath.Join("/home", username, "projects/", p.Path, p.Name))[1][1:]
+			fileInfo,err := os.Stat(res.Path);
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if fileInfo.IsDir() {
+				res.Type = "dir"
+			}else {
+				res.Type = "file"
+			}
 			res.OK = true
 			switch n.Event() {
 			case notify.Create:
-				res.Type = 0
+				res.State = 0
 			case notify.Remove:
-				res.Type = 1
+				res.State = 1
 			case notify.Write:
-				res.Type = 2
+				res.State = 2
 			case notify.InMovedFrom:
-				res.Type = 3
+				res.State = 3
 			case notify.InMovedTo:
-				res.Type = 4
+				res.State = 4
 			default:
-				res.Type = 5
+				res.State = 5
 			}
 			err = ws.WriteJSON(res)
 			if err != nil {

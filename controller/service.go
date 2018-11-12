@@ -61,6 +61,8 @@ func startContainer(b []byte) (string, error) {
 	url := url.URL{Scheme: "http", Host: dockerAddr, Path: "/create"}
 	resp, err := http.Post(url.String(), "application/x-www-form-urlencoded", strings.NewReader(string(b)))
 	if err != nil {
+		log.Println(err)
+		return "", err
 	}
 	res := NewContainerRet{}
 	retBody, err := ioutil.ReadAll(resp.Body)
@@ -75,6 +77,47 @@ func startContainer(b []byte) (string, error) {
 		return "", errors.New(res.Msg)
 	}
 	return res.ID, nil
+}
+
+func resizeContainer(r *ResizeContainer) error {
+	// get addr
+	dockerAddr := os.Getenv("DOCKER_ADDRESS")
+	dockerPort := os.Getenv("DOCKER_PORT")
+	if len(dockerAddr) == 0 {
+		dockerAddr = "localhost"
+	}
+	if len(dockerPort) == 0 {
+		dockerPort = "8888"
+	}
+	dockerPort = ":" + dockerPort
+	dockerAddr = dockerAddr + dockerPort
+	url := url.URL{Scheme: "http", Host: dockerAddr, Path: "/resize"}
+	b, err := json.Marshal(r)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	resp, err := http.Post(url.String(), "application/x-www-form-urlencoded", strings.NewReader(string(b)))
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	ret := ResizeContainerRet{}
+	retBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	err = json.Unmarshal(retBody, &ret)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	if ret.OK {
+		return nil
+	}
+	log.Println(ret.Msg)
+	return errors.New(ret.Msg)
 }
 
 // ReadFromClient receive message from client connection

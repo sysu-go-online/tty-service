@@ -55,9 +55,9 @@ func WebSocketTermHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Handle messages from the channel
 	isFirst := true
-	sConn := handlerClientTTYMsg(&isFirst, ws, nil, msgType, &m)
+	sConn, id := handlerClientTTYMsg(&isFirst, ws, nil, msgType, &m, "")
 	for msg := range clientMsg {
-		handlerClientTTYMsg(&isFirst, ws, sConn, msgType, &msg)
+		handlerClientTTYMsg(&isFirst, ws, sConn, msgType, &msg, id)
 	}
 	if sConn != nil {
 		sConn.Close()
@@ -65,9 +65,8 @@ func WebSocketTermHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandlerClientMsg handle message from client and send it to docker service
-func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Conn, msgType int, connectContext *RequestCommand) (conn *websocket.Conn) {
+func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Conn, msgType int, connectContext *RequestCommand, ID string) (conn *websocket.Conn, id string) {
 	r := &TTYResponse{}
-	var id string
 	if *isFirst {
 		// check token
 		ok, username := tools.GetUserNameFromToken(connectContext.JWT, AuthRedisClient)
@@ -185,6 +184,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 			ws.Close()
 			return
 		}
+		ID = id
 		// Listen message from docker service and send to client connection
 		go sendTTYMsgToClient(ws, sConn)
 	}
@@ -197,21 +197,21 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		return
 	}
 
+	// judge if the tty size should be changed
+	if connectContext.Width > 0 && connectContext.Height > 0 {
+		r := ResizeContainer{
+			ID:     ID,
+			Width:  connectContext.Width,
+			Height: connectContext.Height,
+		}
+		resizeContainer(&r)
+	}
+
 	// Send message to docker service
 	switch connectContext.Type {
 	case 0:
 		// user input stream
 		handleTTYMessage(msgType, sConn, id, connectContext.Message)
-	case 1:
-		// menu
-		// TODO: get language
-		c, err := tools.GenerateCommandFromMenu(0, connectContext.Message)
-		if err != nil {
-			r.OK = false
-			r.Msg = err.Error()
-			break
-		}
-		handleTTYMessage(msgType, sConn, id, c)
 	}
 	*isFirst = false
 	conn = sConn

@@ -9,6 +9,8 @@ type RequestCommand struct {
 	Project  string `json:"project"`
 	Type     int    `json:"type"`
 	Language int    `json:"language"`
+	Width    int    `json:"width"`
+	Height   int    `json:"height"`
 	username string
 }
 
@@ -37,6 +39,16 @@ type NewContainerRet struct {
 	OK  bool   `json:"ok"`
 	Msg string `json:"msg"`
 }
+
+// ResizeContainer contains msg to be sent tot the docker end
+type ResizeContainer struct {
+	ID     string `json:"id"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
+}
+
+// ResizeContainerRet containes the response of resize container
+type ResizeContainerRet TTYResponse
 
 // ByteStreamToDocker contains byte stream from user to container
 type ByteStreamToDocker struct {

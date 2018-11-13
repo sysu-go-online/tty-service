@@ -132,15 +132,16 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 		for n := range c {
 			res.Path = strings.Split(n.Path(), filepath.Join("/home", username, "projects/", p.Path, p.Name))[1][1:]
 			res.OK = true
+			        	
+			if err = notify.Watch(n.Path(), c, notify.All); err != nil {
+			    log.Println(err)
+			}
 			
 			fileInfo,err := os.Stat(n.Path());
 			if err != nil {
 				log.Println(err)
 			} else {
 			    if fileInfo.IsDir() {
-			        if err = notify.Watch(n.Path(), c, notify.All); err != nil {
-			            log.Println(err)
-			        } 
 				res.Type = "dir"
 			    } else {
 				res.Type = "file"

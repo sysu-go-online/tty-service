@@ -164,11 +164,8 @@ func MonitorDirHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 				return
 			}
-
-            notify.Stop(c)
-			if err := notify.Watch(path+"/...", c, notify.All); err != nil {
+            if err := notify.Watch(n.Path(), c, notify.All); err != nil {
 		        log.Println(err)
-		        return
 	        }
 		}
 	}()

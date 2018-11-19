@@ -171,6 +171,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 			conn = nil
 			return
 		}
+		ID = id
 
 		// TODO: write container information to the redis
 		// connect to the container
@@ -197,7 +198,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		return
 	}
 
-	// judge if the tty size should be changed
+	// resize tty window
 	if connectContext.Width > 0 && connectContext.Height > 0 {
 		r := ResizeContainer{
 			ID:     ID,

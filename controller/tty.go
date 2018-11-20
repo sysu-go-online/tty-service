@@ -140,7 +140,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 			image = "ubuntu"
 		}
 		// get project root dir
-		pwd := filepath.Join("/root", p.Path, p.Name)
+		pwd := filepath.Join("/ubuntu", p.Path, p.Name)
 		body := NewContainer{
 			Image:     image,
 			Command:   "bash",

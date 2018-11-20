@@ -147,7 +147,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 			PWD:       pwd,
 			ENV:       []string{},
 			Mnt:       []string{userHome},
-			TargetDir: []string{"/root"},
+			TargetDir: []string{"/ubuntu"},
 			Network:   []string{},
 		}
 

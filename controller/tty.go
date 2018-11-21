@@ -136,8 +136,10 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 			image = "txzdream/go-online-cpp_image"
 		case 2:
 			image = "txzdream/go-online-python_image"
-		default:
+		case 3:
 			image = "ubuntu"
+		default:
+			image = "txzdream/go-online-golang_image"
 		}
 		// get project root dir
 		pwd := filepath.Join("/ubuntu", p.Path, p.Name)

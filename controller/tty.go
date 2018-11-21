@@ -143,7 +143,6 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		pwd := filepath.Join("/ubuntu", p.Path, p.Name)
 		body := NewContainer{
 			Image:     image,
-			Command:   "bash",
 			PWD:       pwd,
 			ENV:       []string{},
 			Mnt:       []string{userHome},

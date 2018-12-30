@@ -147,13 +147,17 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 			image = "txzdream/go-online-golang_image"
 		}
 		// get project root dir
-		pwd := filepath.Join("/ubuntu", p.Path, p.Name)
+		CONTAINER_USER_NAME := os.Getenv("CONTAINER_USER_NAME")
+		if CONTAINER_USER_NAME == "" {
+			CONTAINER_USER_NAME = "root"
+		}
+		pwd := filepath.Join(CONTAINER_USER_NAME, p.Path, p.Name)
 		body := NewContainer{
 			Image:     image,
 			PWD:       pwd,
 			ENV:       []string{},
 			Mnt:       []string{userHome},
-			TargetDir: []string{"/ubuntu"},
+			TargetDir: []string{CONTAINER_USER_NAME},
 			Network:   []string{},
 		}
 
@@ -220,10 +224,10 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 	// Send message to docker service
 	//switch connectContext.Type {
 	//case 0:
-		// user input stream
+	// user input stream
 	handleTTYMessage(msgType, sConn, id, connectContext.Message)
 	//case 1:
-		//resize the window
+	//resize the window
 	//}
 	*isFirst = false
 	conn = sConn

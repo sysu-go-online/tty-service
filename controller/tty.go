@@ -33,7 +33,7 @@ func WebSocketTermHandler(w http.ResponseWriter, r *http.Request) {
 	m := RequestCommand{}
 	if err = ws.ReadJSON(&m); err != nil {
 		fmt.Println(err)
-		clientMsg <- mmsgType
+		clientMsg <- m
 		return
 	}
 

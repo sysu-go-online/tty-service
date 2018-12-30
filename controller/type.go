@@ -48,7 +48,10 @@ type ResizeContainer struct {
 }
 
 // ResizeContainerRet containes the response of resize container
-type ResizeContainerRet TTYResponse
+type ResizeContainerRet struct {
+	OK  bool   `json:"ok"`
+	Msg string `json:"msg"`
+}
 
 // ByteStreamToDocker contains byte stream from user to container
 type ByteStreamToDocker struct {

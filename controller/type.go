@@ -7,7 +7,6 @@ type RequestCommand struct {
 	Message  string `json:"msg"`
 	JWT      string `json:"jwt"`
 	Project  string `json:"project"`
-	Type     int    `json:"type"`
 	Language int    `json:"language"`
 	Width    int    `json:"width"`
 	Height   int    `json:"height"`
@@ -16,8 +15,9 @@ type RequestCommand struct {
 
 // TTYResponse stores data to be sent to the client
 type TTYResponse struct {
-	OK  bool   `json:"ok"`
-	Msg string `json:"msg"`
+	OK   bool   `json:"ok"`
+	Msg  string `json:"msg"`
+	Id   string `json:"id"`
 }
 
 // service end to docker end
@@ -50,8 +50,8 @@ type ResizeContainer struct {
 // ResizeContainerRet containes the response of resize container
 type ResizeContainerRet TTYResponse
 
-// ByteStreamToDocker contains byte stream from user to container
-type ByteStreamToDocker struct {
+//  contains byte stream from user to container
+type  struct {
 	ID  string `json:"id"`
 	Msg string `json:"msg"`
 }

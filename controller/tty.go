@@ -33,7 +33,7 @@ func WebSocketTermHandler(w http.ResponseWriter, r *http.Request) {
 	m := RequestCommand{}
 	if err = ws.ReadJSON(&m); err != nil {
 		fmt.Println(err)
-		clientMsg <- m
+		clientMsg <- mmsgType
 		return
 	}
 
@@ -74,6 +74,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		if !ok {
 			fmt.Fprintln(os.Stderr, "Can not get user token information")
 			r.OK = false
+			r.Id = ""
 			r.Msg = "Invalid token"
 			ws.WriteJSON(r)
 			ws.Close()
@@ -88,6 +89,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		if !ok {
 			fmt.Fprintln(os.Stderr, "Can not get user information")
 			r.OK = false
+			r.Id = ""
 			r.Msg = "Invalid user information"
 			ws.WriteJSON(r)
 			ws.Close()
@@ -97,6 +99,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			r.OK = false
+			r.Id = ""
 			r.Msg = err.Error()
 			ws.WriteJSON(r)
 			ws.Close()
@@ -108,6 +111,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		if !has {
 			fmt.Fprintln(os.Stderr, "Can not get project information")
 			r.OK = false
+			r.Id = ""
 			r.Msg = "Can not get project information"
 			ws.WriteJSON(r)
 			ws.Close()
@@ -117,6 +121,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			r.OK = false
+			r.Id = ""
 			r.Msg = err.Error()
 			ws.WriteJSON(r)
 			ws.Close()
@@ -156,6 +161,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			r.OK = false
+			r.Id = ""
 			r.Msg = err.Error()
 			ws.WriteJSON(r)
 			ws.Close()
@@ -166,6 +172,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			r.OK = false
+			r.Id = ""
 			r.Msg = err.Error()
 			ws.WriteJSON(r)
 			ws.Close()
@@ -181,6 +188,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		if err != nil {
 			fmt.Println("Can not connect to the docker service")
 			r.OK = false
+			r.Id = ""
 			r.Msg = "Server error"
 			ws.WriteJSON(r)
 			ws.Close()
@@ -210,11 +218,13 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 	}
 
 	// Send message to docker service
-	switch connectContext.Type {
-	case 0:
+	//switch connectContext.Type {
+	//case 0:
 		// user input stream
-		handleTTYMessage(msgType, sConn, id, connectContext.Message)
-	}
+	handleTTYMessage(msgType, sConn, id, connectContext.Message)
+	//case 1:
+		//resize the window
+	//}
 	*isFirst = false
 	conn = sConn
 	return

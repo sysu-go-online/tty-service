@@ -151,7 +151,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		if CONTAINER_USER_NAME == "" {
 			CONTAINER_USER_NAME = "root"
 		}
-		pwd := filepath.Join(CONTAINER_USER_NAME, p.Path, p.Name)
+		pwd := filepath.Join("/", CONTAINER_USER_NAME, p.Path, p.Name)
 		body := NewContainer{
 			Image:     image,
 			PWD:       pwd,

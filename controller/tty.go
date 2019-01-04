@@ -156,7 +156,7 @@ func handlerClientTTYMsg(isFirst *bool, ws *websocket.Conn, sConn *websocket.Con
 		body := NewContainer{
 			Image:     image,
 			PWD:       pwd,
-			ENV:       []string{},
+			ENV:       []string{"GOPATH=/home/ubuntu/go"},
 			Mnt:       []string{userHome},
 			TargetDir: []string{rootDir},
 			Network:   []string{},
